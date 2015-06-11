@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{DD8A49
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imposter.Fiddler.Installer", "Imposter.Fiddler.Installer\Imposter.Fiddler.Installer.csproj", "{9593C0A3-BB7F-4BE4-9FB5-C9A51CF73D4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{6C7AB355-6758-4484-8560-CD6B22B1120B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C7AB355-6758-4484-8560-CD6B22B1120B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C7AB355-6758-4484-8560-CD6B22B1120B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9593C0A3-BB7F-4BE4-9FB5-C9A51CF73D4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9593C0A3-BB7F-4BE4-9FB5-C9A51CF73D4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9593C0A3-BB7F-4BE4-9FB5-C9A51CF73D4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9593C0A3-BB7F-4BE4-9FB5-C9A51CF73D4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

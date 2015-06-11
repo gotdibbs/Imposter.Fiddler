@@ -20,6 +20,7 @@ namespace Imposter.Fiddler
         private ImposterSettings _settings = null;
         // TODO: switch to List<Profile>, need to set watcher on the profile maybe? then switch poll for changes to have a parameter
         private Profile _currentProfile = null;
+        private ToolStripMenuItem _currentMenuItem = null;
 
         private FileSystemWatcher _watcher = null;
         private bool _hasChanges = false;
@@ -185,14 +186,39 @@ namespace Imposter.Fiddler
             var parent = item.OwnerItem as ToolStripMenuItem;
             parent.Checked = !parent.Checked;
 
-            _currentProfile = _settings.Profiles.Where(p => p.Name == parent.Text).First();
-
-            if (!IsEnabled)
+            if (item.Checked)
             {
+                IsEnabled = true;
+                _isEnabled.Checked = true;
                 _isEnabled.Enabled = true;
                 _autoReload.Enabled = true;
 
-                _isEnabled.PerformClick();
+                _currentProfile = _settings.Profiles.Where(p => p.Name == parent.Text).First();
+
+                if (_currentMenuItem != null && _currentMenuItem != item)
+                {
+                    // Uncheck previously enabled profile
+                    _currentMenuItem.Checked = false;
+                    parent = _currentMenuItem.OwnerItem as ToolStripMenuItem;
+                    parent.Checked = false;
+                }
+
+                // Track currently enabled profile for unchecking later
+                _currentMenuItem = item;
+
+                Start();
+            }
+            else
+            {
+                IsEnabled = false;
+                _isEnabled.Checked = false;
+                _isEnabled.Enabled = false;
+                _autoReload.Enabled = false;
+
+                _currentProfile = null;
+                _currentMenuItem = null;
+
+                Stop();
             }
         }
 
