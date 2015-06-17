@@ -18,12 +18,7 @@ namespace Imposter.Fiddler
         public bool EnableAutoReload { get; set; }
 
         private ImposterSettings _settings = null;
-        // TODO: switch to List<Profile>, need to set watcher on the profile maybe? then switch poll for changes to have a parameter
-        private Profile _currentProfile = null;
-        private ToolStripMenuItem _currentMenuItem = null;
-
-        private FileSystemWatcher _watcher = null;
-        private bool _hasChanges = false;
+        private List<Profile> _enabledProfiles = null;
 
         private ToolStripMenuItem _imposterMenu;
         private ToolStripMenuItem _profiles;
@@ -32,6 +27,7 @@ namespace Imposter.Fiddler
 
         public Imposter()
         {
+            _enabledProfiles = new List<Profile>();
             _settings = ImposterSettings.Load();
             InitializeMenu();
         }
@@ -49,37 +45,28 @@ namespace Imposter.Fiddler
 
         private void Start()
         {
-            if (_currentProfile == null)
+            if (_enabledProfiles == null || _enabledProfiles.Count == 0)
             {
                 MessageBox.Show("In order to start the proxy, you must first select a profile.");
                 return;
             }
-            if (!Directory.Exists(_currentProfile.LocalDirectory))
+            else
             {
-                MessageBox.Show(string.Format("The folder located at '{0}' does not exist. Please correct this error before continuing.", _currentProfile.LocalDirectory));
-                return;
+                foreach (var profile in _enabledProfiles)
+                {
+                    if (!profile.IsRunning)
+                    {
+                        profile.Start(EnableAutoReload);
+                    }
+                }
             }
-
-            if (_watcher == null)
-            {
-                _watcher = new FileSystemWatcher();
-                _watcher.IncludeSubdirectories = true;
-                _watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.CreationTime;
-                _watcher.Filter = "*.*";
-                _watcher.Changed += FileWatchUpdate;
-                _watcher.Created += FileWatchUpdate;
-                _watcher.Deleted += FileWatchUpdate;
-                _watcher.Renamed += FileWatchUpdate;
-            }
-            _watcher.Path = _currentProfile.LocalDirectory;
-            _watcher.EnableRaisingEvents = EnableAutoReload;
         }
 
         private void Stop()
         {
-            if (_watcher != null)
+            foreach (var profile in _enabledProfiles)
             {
-                _watcher.EnableRaisingEvents = false;
+                profile.Stop();
             }
         }
 
@@ -121,6 +108,7 @@ namespace Imposter.Fiddler
             foreach (var profile in _settings.Profiles)
             {
                 var item = new ToolStripMenuItem(profile.Name);
+                item.Tag = profile.ProfileId;
 
                 var itemEnable = new ToolStripMenuItem("&Enable");
                 itemEnable.Click += ProfileEnable_Click;
@@ -162,7 +150,10 @@ namespace Imposter.Fiddler
         {
             EnableAutoReload = _autoReload.Checked = !_autoReload.Checked;
 
-            _watcher.EnableRaisingEvents = EnableAutoReload;
+            foreach (var profile in _enabledProfiles)
+            {
+                profile.EnableWatcher = EnableAutoReload;
+            }
         }
 
         private void AddNew_Click(object sender, EventArgs e)
@@ -193,32 +184,26 @@ namespace Imposter.Fiddler
                 _isEnabled.Enabled = true;
                 _autoReload.Enabled = true;
 
-                _currentProfile = _settings.Profiles.Where(p => p.Name == parent.Text).First();
-
-                if (_currentMenuItem != null && _currentMenuItem != item)
-                {
-                    // Uncheck previously enabled profile
-                    _currentMenuItem.Checked = false;
-                    parent = _currentMenuItem.OwnerItem as ToolStripMenuItem;
-                    parent.Checked = false;
-                }
-
-                // Track currently enabled profile for unchecking later
-                _currentMenuItem = item;
+                _enabledProfiles.Add(_settings.Profiles.Where(p => p.ProfileId == (Guid)parent.Tag).First());
 
                 Start();
             }
             else
             {
-                IsEnabled = false;
-                _isEnabled.Checked = false;
-                _isEnabled.Enabled = false;
-                _autoReload.Enabled = false;
+                var profile = _enabledProfiles.Where(p => p.ProfileId == (Guid)parent.Tag).First();
+                profile.Stop();
 
-                _currentProfile = null;
-                _currentMenuItem = null;
+                _enabledProfiles.Remove(profile);
 
-                Stop();
+                if (_enabledProfiles.Count == 0)
+                {
+                    IsEnabled = false;
+                    _isEnabled.Checked = false;
+                    _isEnabled.Enabled = false;
+                    _autoReload.Enabled = false;
+
+                    Stop();
+                }
             }
         }
 
@@ -240,7 +225,8 @@ namespace Imposter.Fiddler
 
                 if (IsEnabled && item.Checked)
                 {
-                    _currentProfile = profileEditor.Profile;
+                    _enabledProfiles.RemoveAll(p => p.ProfileId == (Guid)parent.Tag);
+                    _enabledProfiles.Add(profileEditor.Profile);
                 }
 
                 LoadProfileItems(profileEditor.Profile.Name);
@@ -252,10 +238,37 @@ namespace Imposter.Fiddler
             var item = (ToolStripMenuItem)sender;
             var parent = item.OwnerItem as ToolStripMenuItem;
 
-            _settings.Profiles = _settings.Profiles.Where(p => p.Name != parent.Text).ToList();
-            _settings.Save();
+            var profile = _settings.Profiles.Where(p => p.ProfileId == (Guid)parent.Tag).First();
 
-            LoadProfileItems();
+            // If the profile is enabled
+            if (_enabledProfiles.Contains(profile))
+            {
+                // Stop it if it is running
+                if (profile.IsRunning)
+                {
+                    profile.Stop();
+                }
+
+                // Remove it from the active list
+                _enabledProfiles.Remove(profile);
+
+                // If there are no other active profiles, call it a day
+                if (_enabledProfiles.Count == 0)
+                {
+                    IsEnabled = false;
+                    _isEnabled.Checked = false;
+                    _isEnabled.Enabled = false;
+                    _autoReload.Enabled = false;
+
+                    Stop();
+                }
+            }
+
+            // Remove the item from the menu
+            parent.Dispose();
+
+            _settings.Profiles = _settings.Profiles.Where(p => p.ProfileId != (Guid)parent.Tag).ToList();
+            _settings.Save();
         }
 
         #endregion
@@ -268,21 +281,7 @@ namespace Imposter.Fiddler
             }
 
             string fullString = oSession.fullUrl.ToLower();
-            if (fullString.Contains(_currentProfile.RemoteUrl.ToLower()))
-            {
-                fullString = GetStringAfterSubString(fullString, _currentProfile.RemoteUrl.ToLower()).Split(new char[] { '?' })[0];
-                var path = GetLocalFilePath(fullString);
-                if (path != null)
-                {
-                    oSession.utilCreateResponseAndBypassServer();
-                    oSession.LoadResponseFromFile(path);
-                    oSession.ResponseHeaders.Add("x-imposter", path);
-                    if (oSession.ViewItem != null)
-                    {
-                        oSession.ViewItem.BackColor = Color.SkyBlue;
-                    }
-                }
-            }
+
             if (fullString.EndsWith("imposter.js") && EnableAutoReload)
             {
                 oSession.utilCreateResponseAndBypassServer();
@@ -290,19 +289,47 @@ namespace Imposter.Fiddler
                 oSession.LoadResponseFromFile(js);
                 oSession.ResponseHeaders.Add("x-imposter", js);
             }
-            if (fullString.Contains("/imposter-poll-for-changes") && EnableAutoReload)
+
+            if (fullString.ToLower().Contains("/imposter-poll-for-changes?profileid=") && EnableAutoReload)
             {
+                var profileIdIndex = fullString.ToLower().IndexOf("/imposter-poll-for-changes?profileid=");
+                var profileIdFragment = fullString.Substring(profileIdIndex + "/imposter-poll-for-changes?profileid=".Length);
+
+                Guid profileId;
+                var success = Guid.TryParse(profileIdFragment, out profileId);
+
                 oSession.utilCreateResponseAndBypassServer();
                 oSession.ResponseHeaders.Add("x-imposter", "AUTO RELOAD");
-                if (_hasChanges)
+
+                if (success && _enabledProfiles.Any(p => p.ProfileId == profileId && p.HasChanges))
                 {
                     oSession.utilSetResponseBody("true");
-                    _hasChanges = false;
+                    _enabledProfiles.ForEach(p => p.HasChanges = false);
                 }
                 else
                 {
                     oSession.utilSetResponseBody("false");
                 }
+            }
+
+            foreach (var profile in _enabledProfiles)
+            {
+                var path = profile.GetFileMatch(fullString);
+
+                if (path == null)
+                {
+                    continue;
+                }
+
+                oSession.utilCreateResponseAndBypassServer();
+                oSession.LoadResponseFromFile(path);
+                oSession.ResponseHeaders.Add("x-imposter", path);
+                if (oSession.ViewItem != null)
+                {
+                    oSession.ViewItem.BackColor = Color.SkyBlue;
+                }
+                // Only swap for the first match
+                break;
             }
         }
 
@@ -320,16 +347,25 @@ namespace Imposter.Fiddler
 
         public void AutoTamperResponseBefore(Session oSession)
         {
-            if (!IsEnabled)
+            if (!IsEnabled || !EnableAutoReload)
             {
                 return;
             }
 
             var fullString = oSession.fullUrl.ToLower();
-            if (fullString.Contains(_currentProfile.RemoteUrl.ToLower()) && EnableAutoReload)
+
+            foreach (var profile in _enabledProfiles)
             {
-                oSession.utilDecodeResponse();
-                bool replaced = oSession.utilReplaceInResponse("</body>", "<script type='text/javascript' src='imposter.js'></script></body>");
+                if (fullString.Contains(profile.RemoteUrl.ToLower()))
+                {
+                    oSession.utilDecodeResponse();
+                    bool replaced = oSession.utilReplaceInResponse("</body>", string.Format(
+                        @"<script type='text/javascript'>window.__IMPOSTER = {{ profileId: '{0}' }};</script>
+                          <script type='text/javascript' src='imposter.js'></script>
+                          </body>", profile.ProfileId));
+
+                    break;
+                }
             }
         }
 
@@ -341,55 +377,6 @@ namespace Imposter.Fiddler
 
             return string.Join(", ", paths);
         }
-
-        private void FileWatchUpdate(object sender, FileSystemEventArgs e)
-        {
-            _hasChanges = true;
-        }
-
-        #region Helpers
-
-        private string GetStringAfterSubString(string fullString, string subString)
-        {
-            int index = fullString.IndexOf(subString);
-            return fullString.Substring(index + subString.Length);
-        }
-
-        private string GetLocalFilePath(string urlFragment)
-        {
-            var path = _currentProfile.LocalDirectory + @"\" + urlFragment.Replace("/", @"\");
-
-            if (File.Exists(path))
-            {
-                return path;
-            }
-
-            foreach (var ovr in _currentProfile.Overrides)
-            {
-                if (urlFragment.Contains(ovr.RemoteFile.ToLower()) && CheckIfFileExists(ovr.LocalFile))
-                {
-                    return ovr.LocalFile;
-                }
-            }
-
-            return null;
-        }
-
-        private bool CheckIfFileExists(string file)
-        {
-            var result = true;
-
-            result = result && File.Exists(file);
-
-            if (!result)
-            {
-                MessageBox.Show(string.Format("File \"{0}\" does not appear to exist on disk.", file));
-            }
-
-            return result;
-        }
-
-        #endregion Helpers
 
         #region Not Implemented
 

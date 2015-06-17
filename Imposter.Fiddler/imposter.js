@@ -4,13 +4,20 @@
 
     function _pollForChanges() {
         var req = new XMLHttpRequest(),
-            url = [
-                window.location.protocol,
-                '//',
-                window.location.host,
-                '/',
-                'imposter-poll-for-changes'
-            ].join('');
+            url;
+        
+        if (!exports.__IMPOSTER.profileId) {
+            return;   
+        }
+        
+        url = [
+            window.location.protocol,
+            '//',
+            window.location.host,
+            '/',
+            'imposter-poll-for-changes?profileId=',
+            exports.__IMPOSTER.profileId
+        ].join('');
 
         req.open('POST', url, true);
         req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');

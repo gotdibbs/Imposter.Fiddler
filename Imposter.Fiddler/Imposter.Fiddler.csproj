@@ -67,6 +67,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\FileWatcher.cs" />
+    <Compile Include="Helpers\PathHelper.cs" />
     <Compile Include="Imposter.cs" />
     <Compile Include="Models\Override.cs" />
     <Compile Include="Models\Profile.cs" />

@@ -12,12 +12,15 @@ namespace Imposter.Fiddler.Views
     /// </summary>
     public partial class ProfileEditor : MetroWindow
     {
+        public Guid ProfileId { get; set; }
+
         public Profile Profile
         {
             get
             {
                 return new Profile
                 {
+                    ProfileId = ProfileId,
                     Name = Name.Text,
                     LocalDirectory = Local.Text,
                     RemoteUrl = Remote.Text,
@@ -26,6 +29,7 @@ namespace Imposter.Fiddler.Views
             }
             set
             {
+                ProfileId = value.ProfileId;
                 Name.Text = value.Name == "[Dat One Unknown Profile Doe]" ? string.Empty : value.Name;
                 Local.Text = value.LocalDirectory;
                 Remote.Text = value.RemoteUrl;
@@ -43,6 +47,7 @@ namespace Imposter.Fiddler.Views
             }
             else
             {
+                ProfileId = Guid.NewGuid();
                 Overrides.ItemsSource = new List<Override>();
             }
 
