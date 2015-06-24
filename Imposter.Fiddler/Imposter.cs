@@ -227,9 +227,13 @@ namespace Imposter.Fiddler
                 {
                     _enabledProfiles.RemoveAll(p => p.ProfileId == (Guid)parent.Tag);
                     _enabledProfiles.Add(profileEditor.Profile);
-                }
 
-                LoadProfileItems(profileEditor.Profile.Name);
+                    LoadProfileItems(profileEditor.Profile.Name);
+                }
+                else
+                {
+                    LoadProfileItems();
+                }
             }
         }
 

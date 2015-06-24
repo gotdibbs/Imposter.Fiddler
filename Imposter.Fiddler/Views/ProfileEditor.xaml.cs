@@ -18,13 +18,16 @@ namespace Imposter.Fiddler.Views
         {
             get
             {
+                var overrides = new List<Override>(Overrides.ItemsSource as IEnumerable<Override>);
+                overrides.RemoveAll(o => string.IsNullOrEmpty(o.LocalFile) || string.IsNullOrEmpty(o.RemoteFile));
+
                 return new Profile
                 {
                     ProfileId = ProfileId,
                     Name = Name.Text,
                     LocalDirectory = Local.Text,
                     RemoteUrl = Remote.Text,
-                    Overrides = new List<Override>(Overrides.ItemsSource as IEnumerable<Override>)
+                    Overrides = overrides
                 };
             }
             set

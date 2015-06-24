@@ -57,8 +57,11 @@ namespace Imposter.Fiddler.Model
         {
             IsRunning = false;
 
-            _watcher.Dispose();
-            _watcher = null;
+            if (_watcher != null)
+            {
+                _watcher.Dispose();
+                _watcher = null;
+            }
         }
 
         public string GetFileMatch(string url)

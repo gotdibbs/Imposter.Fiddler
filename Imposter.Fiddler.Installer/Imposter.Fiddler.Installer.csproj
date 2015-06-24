@@ -160,9 +160,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\Imposter.Fiddler\bin\Release\System.Windows.Interactivity.dll">
+    <None Include="..\Imposter.Fiddler\bin\Release\System.Windows.Interactivity.dll">
       <Link>Scripts\System.Windows.Interactivity.dll</Link>
-    </Content>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

@@ -35,6 +35,7 @@ namespace Imposter.Fiddler.Installer
             File.Copy("Scripts\\Imposter.Fiddler.dll", installLocation + "Imposter.Fiddler.dll", true);
             File.Copy("Scripts\\imposter.js", installLocation + "imposter.js", true);
             File.Copy("Scripts\\MahApps.Metro.dll", installLocation + "MahApps.Metro.dll", true);
+            File.Copy("Scripts\\System.Windows.Interactivity.dll", installLocation + "System.Windows.Interactivity.dll", true);
 
             Tabs.SelectedIndex = _tabIndex = 1;
         }

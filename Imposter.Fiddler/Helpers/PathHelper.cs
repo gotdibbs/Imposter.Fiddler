@@ -27,7 +27,11 @@ namespace Imposter.Fiddler.Helpers
 
             foreach (var ovr in overrides)
             {
-                if (urlFragment.Contains(ovr.RemoteFile.ToLower()) && CheckIfFileExists(ovr.LocalFile))
+                if (ovr != null &&
+                    !string.IsNullOrEmpty(ovr.RemoteFile) &&
+                    !string.IsNullOrEmpty(ovr.LocalFile) &&
+                    urlFragment.Contains(ovr.RemoteFile.ToLower()) &&
+                    CheckIfFileExists(ovr.LocalFile))
                 {
                     return ovr.LocalFile;
                 }
