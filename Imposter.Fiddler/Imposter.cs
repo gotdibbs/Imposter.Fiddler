@@ -105,7 +105,7 @@ namespace Imposter.Fiddler
             _profiles.DropDownItems.Add(addNew);
             _profiles.DropDownItems.Add(new ToolStripSeparator());
 
-            foreach (var profile in _settings.Profiles)
+            foreach (var profile in _settings.Profiles.OrderBy(p => p.Name))
             {
                 var item = new ToolStripMenuItem(profile.Name);
                 item.Tag = profile.ProfileId;
@@ -223,7 +223,7 @@ namespace Imposter.Fiddler
                 _settings.Profiles.Add(profileEditor.Profile);
                 _settings.Save();
 
-                if (IsEnabled && item.Checked)
+                if (IsEnabled && parent.Checked)
                 {
                     _enabledProfiles.RemoveAll(p => p.ProfileId == (Guid)parent.Tag);
                     _enabledProfiles.Add(profileEditor.Profile);
