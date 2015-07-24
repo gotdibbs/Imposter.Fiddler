@@ -25,7 +25,7 @@ namespace Imposter.Fiddler.Views
                 {
                     ProfileId = ProfileId,
                     Name = Name.Text,
-                    LocalDirectory = Local.Text,
+                    LocalDirectory = Local.Directory,
                     RemoteUrl = Remote.Text,
                     Overrides = overrides
                 };
@@ -34,7 +34,7 @@ namespace Imposter.Fiddler.Views
             {
                 ProfileId = value.ProfileId;
                 Name.Text = value.Name == "[Dat One Unknown Profile Doe]" ? string.Empty : value.Name;
-                Local.Text = value.LocalDirectory;
+                Local.Directory = value.LocalDirectory;
                 Remote.Text = value.RemoteUrl;
                 Overrides.ItemsSource = value.Overrides;
             }
@@ -61,20 +61,20 @@ namespace Imposter.Fiddler.Views
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(Name.Text) || string.IsNullOrEmpty(Local.Text) || string.IsNullOrEmpty(Remote.Text))
+            if (string.IsNullOrEmpty(Name.Text) || string.IsNullOrEmpty(Local.Directory) || string.IsNullOrEmpty(Remote.Text))
             {
                 MessageBox.Show("Name, Base Url, Local Directory and Port are required fields. Please fill them in before continuing.");
                 return;
             }
 
             // Check to make sure the directory we're supposed to be serving from actually exists
-            if (!Directory.Exists(Local.Text))
+            if (!Directory.Exists(Local.Directory))
             {
                 if (MessageBox.Show("The chosen local directory does not exist. Attempt to create it?", string.Empty, MessageBoxButton.OKCancel) == MessageBoxResult.OK)
                 {
                     try 
                     {
-                        Directory.CreateDirectory(Local.Text);
+                        Directory.CreateDirectory(Local.Directory);
                     }
                     catch (Exception ex)
                     {

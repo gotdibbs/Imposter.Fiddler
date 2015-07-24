@@ -32,10 +32,12 @@ namespace Imposter.Fiddler.Installer
                 return;
             }
 
-            File.Copy("Scripts\\Imposter.Fiddler.dll", installLocation + "Imposter.Fiddler.dll", true);
-            File.Copy("Scripts\\imposter.js", installLocation + "imposter.js", true);
-            File.Copy("Scripts\\MahApps.Metro.dll", installLocation + "MahApps.Metro.dll", true);
-            File.Copy("Scripts\\System.Windows.Interactivity.dll", installLocation + "System.Windows.Interactivity.dll", true);
+            string[] files = Directory.GetFiles("Scripts\\");
+
+            foreach (string s in files)
+            {
+                File.Copy(s, Path.Combine(installLocation, Path.GetFileName(s)), true);
+            }
 
             Tabs.SelectedIndex = _tabIndex = 1;
         }
