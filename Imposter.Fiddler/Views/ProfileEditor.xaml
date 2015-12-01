@@ -99,8 +99,8 @@
                               BorderBrush="#41B1E1"
                               BorderThickness="1">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Remote File" Binding="{Binding Path=RemoteFile}" Width="*" SortDirection="Descending" />
-                            <DataGridTextColumn Header="Local File" Binding="{Binding Path=LocalFile}" Width="2*" />
+                            <DataGridTextColumn Header="Remote File (file name or path fragment)" Binding="{Binding Path=RemoteFile}" Width="*" SortDirection="Descending" />
+                            <DataGridTextColumn Header="Local File (full path to file)" Binding="{Binding Path=LocalFile}" Width="2*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>

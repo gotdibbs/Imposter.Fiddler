@@ -1,4 +1,5 @@
 ﻿using Fiddler;
+using GitHubUpdate;
 using Imposter.Fiddler.Model;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ namespace Imposter.Fiddler
         public bool IsEnabled { get; set; }
         public bool EnableAutoReload { get; set; }
 
+        private string _version = null;
+
         private ImposterSettings _settings = null;
         private List<Profile> _enabledProfiles = null;
 
@@ -28,6 +31,9 @@ namespace Imposter.Fiddler
 
         public Imposter()
         {
+            _version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            _version = _version.Substring(0, _version.LastIndexOf("."));
+
             _enabledProfiles = new List<Profile>();
             _settings = ImposterSettings.Load();
             InitializeMenu();
@@ -42,6 +48,25 @@ namespace Imposter.Fiddler
             FiddlerApplication.UI.MainMenuStrip.Dock = DockStyle.Top;
             FiddlerApplication.UI.MainMenuStrip.Items.Add(_imposterMenu);
             FiddlerApplication.UI.Controls.Add(FiddlerApplication.UI.MainMenuStrip);
+
+            CheckForUpdates();
+        }
+
+        private async void CheckForUpdates()
+        {
+            var checker = new UpdateChecker("gotdibbs", "Imposter.Fiddler", _version);
+
+            var update = await checker.CheckUpdate();
+
+            if (update != UpdateType.None)
+            {
+                var result = new UpdateNotifyDialog(checker).ShowDialog();
+
+                if (result == DialogResult.Yes)
+                {
+                    MessageBox.Show("Nope");
+                }
+            }
         }
 
         private void Start()
@@ -91,7 +116,7 @@ namespace Imposter.Fiddler
             _autoReload.Enabled = false;
             _autoReload.Checked = EnableAutoReload;
 
-            var version = new ToolStripMenuItem(string.Format("v{0}", Assembly.GetExecutingAssembly().GetName().Version));
+            var version = new ToolStripMenuItem(string.Format("v{0}", _version));
             version.Enabled = false;
 
             var icon = Resources.Resources.Imposter;
