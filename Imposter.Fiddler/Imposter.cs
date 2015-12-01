@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -59,6 +60,8 @@ namespace Imposter.Fiddler
                         profile.Start(EnableAutoReload);
                     }
                 }
+
+                _imposterMenu.Text = "Imposter (Enabled)";
             }
         }
 
@@ -68,6 +71,8 @@ namespace Imposter.Fiddler
             {
                 profile.Stop();
             }
+
+            _imposterMenu.Text = "Imposter";
         }
 
         #region Menu and Menu Events
@@ -86,12 +91,17 @@ namespace Imposter.Fiddler
             _autoReload.Enabled = false;
             _autoReload.Checked = EnableAutoReload;
 
+            var version = new ToolStripMenuItem(string.Format("v{0}", Assembly.GetExecutingAssembly().GetName().Version));
+            version.Enabled = false;
+
             var icon = Resources.Resources.Imposter;
             var image = icon.ToBitmap();
-            _imposterMenu = new ToolStripMenuItem("Imposter", image);
+            _imposterMenu = new ToolStripMenuItem("&Imposter", image);
             _imposterMenu.DropDownItems.Add(_profiles);
             _imposterMenu.DropDownItems.Add(new ToolStripSeparator());
             _imposterMenu.DropDownItems.AddRange(new ToolStripMenuItem[] { _isEnabled, _autoReload });
+            _imposterMenu.DropDownItems.Add(new ToolStripSeparator());
+            _imposterMenu.DropDownItems.Add(version);
 
             LoadProfileItems();
         }
@@ -284,6 +294,8 @@ namespace Imposter.Fiddler
                 return;
             }
 
+            bool isTampered = false;
+
             string fullString = oSession.fullUrl.ToLower();
 
             if (fullString.EndsWith("imposter.js") && EnableAutoReload)
@@ -292,6 +304,8 @@ namespace Imposter.Fiddler
                 var js = Path.GetFullPath("Scripts\\imposter.js");
                 oSession.LoadResponseFromFile(js);
                 oSession.ResponseHeaders.Add("x-imposter", js);
+
+                isTampered = true;
             }
 
             if (fullString.ToLower().Contains("/imposter-poll-for-changes?profileid=") && EnableAutoReload)
@@ -314,6 +328,8 @@ namespace Imposter.Fiddler
                 {
                     oSession.utilSetResponseBody("false");
                 }
+
+                isTampered = true;
             }
 
             foreach (var profile in _enabledProfiles)
@@ -330,8 +346,12 @@ namespace Imposter.Fiddler
                 oSession.ResponseHeaders.Add("x-imposter", path);
                 if (oSession.ViewItem != null)
                 {
-                    oSession.ViewItem.BackColor = Color.SkyBlue;
+                    oSession["ui-backcolor"] = "#4683ea";
+                    oSession["ui-color"] = "#ffffff";
                 }
+
+                isTampered = true;
+
                 // Only swap for the first match
                 break;
             }
