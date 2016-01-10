@@ -20,11 +20,6 @@ namespace Imposter.Fiddler.Helpers
         {
             var path = localDirectory + @"\" + urlFragment.Replace("/", @"\");
 
-            if (File.Exists(path))
-            {
-                return path;
-            }
-
             foreach (var ovr in overrides)
             {
                 if (ovr != null &&
@@ -35,6 +30,11 @@ namespace Imposter.Fiddler.Helpers
                 {
                     return ovr.LocalFile;
                 }
+            }
+
+            if (File.Exists(path))
+            {
+                return path;
             }
 
             return null;
