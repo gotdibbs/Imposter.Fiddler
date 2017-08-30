@@ -46,11 +46,11 @@ namespace Imposter.Fiddler.Installer
         {
             try
             {
-                using (var key = Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Fiddler2"))
+                using (var key = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Fiddler2\\InstallerSettings"))
                 {
                     if (key != null)
                     {
-                        Object o = key.GetValue("LMScriptPath");
+                        Object o = key.GetValue("ScriptPath");
                         if (o != null)
                         {
                             var path = o as string;

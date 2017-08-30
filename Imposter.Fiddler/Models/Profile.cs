@@ -47,6 +47,12 @@ namespace Imposter.Fiddler.Model
 
         public void Start(bool enableAutoReload)
         {
+            if (!Directory.Exists(LocalDirectory))
+            {
+                MessageBox.Show($"Profile '{this.Name}' has an invalid directory selected. Please correct this issue.");
+                return;
+            }
+
             IsRunning = true;
 
             _watcher = new FileWatcher(LocalDirectory, enableAutoReload);

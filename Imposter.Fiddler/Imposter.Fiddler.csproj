@@ -40,8 +40,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Fiddler">
-      <HintPath>C:\Program Files (x86)\Fiddler2\Fiddler.exe</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\AppData\Local\Programs\Fiddler\Fiddler.exe</HintPath>
     </Reference>
     <Reference Include="MahApps.Metro, Version=1.1.2.0, Culture=neutral, PublicKeyToken=f4fb5a3c4d1e5b4f, processorArchitecture=MSIL">
       <HintPath>..\packages\MahApps.Metro.1.1.2.0\lib\net40\MahApps.Metro.dll</HintPath>
@@ -117,7 +116,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetDir)" "%25programfiles(x86)%25\Fiddler2\Scripts\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetDir)" "%25localappdata%25\Programs\Fiddler\Scripts\"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
