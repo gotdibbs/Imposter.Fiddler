@@ -17,6 +17,7 @@ namespace Imposter.Fiddler
     {
         public bool IsEnabled { get; set; }
         public bool EnableAutoReload { get; set; }
+        public bool EnableAutoFilter { get; set; } = true;
 
         private ImposterSettings _settings = null;
         private List<Profile> _enabledProfiles = null;
@@ -25,6 +26,7 @@ namespace Imposter.Fiddler
         private ToolStripMenuItem _profiles;
         private ToolStripMenuItem _isEnabled;
         private ToolStripMenuItem _autoReload;
+        private ToolStripMenuItem _autoFilter;
 
         public Imposter()
         {
@@ -91,6 +93,11 @@ namespace Imposter.Fiddler
             _autoReload.Enabled = false;
             _autoReload.Checked = EnableAutoReload;
 
+            _autoFilter = new ToolStripMenuItem("Auto &Filter");
+            _autoFilter.Click += AuotFilter_Click;
+            _autoFilter.Enabled = false;
+            _autoFilter.Checked = EnableAutoFilter;
+
             var version = new ToolStripMenuItem(string.Format("v{0}", Assembly.GetExecutingAssembly().GetName().Version));
             version.Enabled = false;
 
@@ -99,7 +106,7 @@ namespace Imposter.Fiddler
             _imposterMenu = new ToolStripMenuItem("&Imposter", image);
             _imposterMenu.DropDownItems.Add(_profiles);
             _imposterMenu.DropDownItems.Add(new ToolStripSeparator());
-            _imposterMenu.DropDownItems.AddRange(new ToolStripMenuItem[] { _isEnabled, _autoReload });
+            _imposterMenu.DropDownItems.AddRange(new ToolStripMenuItem[] { _isEnabled, _autoReload, _autoFilter });
             _imposterMenu.DropDownItems.Add(new ToolStripSeparator());
             _imposterMenu.DropDownItems.Add(version);
 
@@ -166,6 +173,11 @@ namespace Imposter.Fiddler
             }
         }
 
+        private void AuotFilter_Click(object sender, EventArgs e)
+        {
+            EnableAutoFilter = _autoFilter.Checked = !_autoFilter.Checked;
+        }
+
         private void AddNew_Click(object sender, EventArgs e)
         {
             var profileEditor = new Views.ProfileEditor();
@@ -193,6 +205,7 @@ namespace Imposter.Fiddler
                 _isEnabled.Checked = true;
                 _isEnabled.Enabled = true;
                 _autoReload.Enabled = true;
+                _autoFilter.Enabled = true;
 
                 _enabledProfiles.Add(_settings.Profiles.Where(p => p.ProfileId == (Guid)parent.Tag).First());
 
@@ -211,6 +224,7 @@ namespace Imposter.Fiddler
                     _isEnabled.Checked = false;
                     _isEnabled.Enabled = false;
                     _autoReload.Enabled = false;
+                    _autoFilter.Enabled = false;
 
                     Stop();
                 }
@@ -354,6 +368,11 @@ namespace Imposter.Fiddler
 
                 // Only swap for the first match
                 break;
+            }
+
+            if (!isTampered && EnableAutoFilter)
+            {
+                oSession["ui-hide"] = "true";
             }
         }
 
