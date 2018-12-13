@@ -2,25 +2,25 @@
 using Imposter.Fiddler.Model;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Threading;
 
 namespace Imposter.Fiddler
 {
-    public class Imposter : IAutoTamper
+    public class Imposter : IFiddlerExtension, IAutoTamper, IHandleExecAction
     {
+        private bool _isStarted = false;
+        private Guid? _autoStartProfileId;
+
         public bool IsEnabled { get; set; }
         public bool EnableAutoReload { get; set; }
         public bool EnableAutoFilter { get; set; } = true;
 
         private ImposterSettings _settings = null;
         private List<Profile> _enabledProfiles = null;
+        private Dictionary<Guid, ToolStripMenuItem> _profileMenuMap = new Dictionary<Guid, ToolStripMenuItem>();
 
         private ToolStripMenuItem _imposterMenu;
         private ToolStripMenuItem _profiles;
@@ -44,6 +44,13 @@ namespace Imposter.Fiddler
             FiddlerApplication.UI.MainMenuStrip.Dock = DockStyle.Top;
             FiddlerApplication.UI.MainMenuStrip.Items.Add(_imposterMenu);
             FiddlerApplication.UI.Controls.Add(FiddlerApplication.UI.MainMenuStrip);
+
+            _isStarted = true;
+
+            if (_autoStartProfileId != null)
+            {
+                StartProfile(_autoStartProfileId.Value);
+            }
         }
 
         private void Start()
@@ -146,6 +153,7 @@ namespace Imposter.Fiddler
                 }
 
                 _profiles.DropDownItems.Add(item);
+                _profileMenuMap.Add(profile.ProfileId, item);
             }
         }
 
@@ -201,15 +209,7 @@ namespace Imposter.Fiddler
 
             if (item.Checked)
             {
-                IsEnabled = true;
-                _isEnabled.Checked = true;
-                _isEnabled.Enabled = true;
-                _autoReload.Enabled = true;
-                _autoFilter.Enabled = true;
-
-                _enabledProfiles.Add(_settings.Profiles.Where(p => p.ProfileId == (Guid)parent.Tag).First());
-
-                Start();
+                StartProfile((Guid)parent.Tag);
             }
             else
             {
@@ -294,6 +294,7 @@ namespace Imposter.Fiddler
 
             // Remove the item from the menu
             parent.Dispose();
+            _profileMenuMap.Remove(profile.ProfileId);
 
             _settings.Profiles = _settings.Profiles.Where(p => p.ProfileId != (Guid)parent.Tag).ToList();
             _settings.Save();
@@ -419,6 +420,76 @@ namespace Imposter.Fiddler
                 .ToArray();
 
             return string.Join(", ", paths);
+        }
+
+        public bool OnExecAction(string action)
+        {
+            if (!action.StartsWith("imposter"))
+            {
+                return false;
+            }
+
+            var parts = action.Split('.');
+
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            var profileId = Guid.Parse(parts[1]);
+
+            var profile = _settings.Profiles.FirstOrDefault(p => p.ProfileId == profileId);
+
+            if (!_isStarted)
+            {
+                _autoStartProfileId = profileId;
+                return true;
+            }
+
+            if (profileId == Guid.Empty || profile == null)
+            {
+                Start();
+            }
+            else
+            {
+                StartProfile(profileId);
+            }
+                
+            return true;
+        }
+
+        private void StartProfile(Guid profileId)
+        {
+            var profile = _settings.Profiles.FirstOrDefault(p => p.ProfileId == profileId);
+
+            if (profileId == Guid.Empty || profile == null)
+            {
+                return;
+            }
+
+            IsEnabled = true;
+            _isEnabled.Checked = true;
+            _isEnabled.Enabled = true;
+            _autoReload.Enabled = true;
+            _autoFilter.Enabled = true;
+
+            if (_profileMenuMap.ContainsKey(profileId))
+            {
+                _profileMenuMap[profileId].Checked = true;
+
+                foreach (ToolStripMenuItem item in _profileMenuMap[profileId].DropDownItems)
+                {
+                    if (item.Text == "&Enable")
+                    {
+                        item.Checked = true;
+                        break;
+                    }
+                }
+            }
+
+            _enabledProfiles.Add(profile);
+
+            Start();
         }
 
         #region Not Implemented
